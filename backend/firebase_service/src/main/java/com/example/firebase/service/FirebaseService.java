@@ -2,6 +2,7 @@ package com.example.firebase.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import com.google.firebase.cloud.FirestoreClient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.UUID;
 
 @Service
 public class FirebaseService {
@@ -65,6 +67,40 @@ public class FirebaseService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch user: " + e.getMessage());
         }
+    }
+
+    public void approveUser(String email) throws InterruptedException, ExecutionException {
+        Firestore db = FirestoreClient.getFirestore();
+
+        // 🔍 Check if user already exists
+        DocumentSnapshot existingUser = db.collection("users").document(email).get().get();
+        if (existingUser.exists()) {
+            throw new RuntimeException("User with email " + email + " is already registered");
+        }
+
+        // 🔍 Check if user is pending
+        DocumentSnapshot pendingSnapshot = db.collection("pending-users").document(email).get().get();
+        if (!pendingSnapshot.exists()) {
+            throw new RuntimeException("User not found in pending-users");
+        }
+
+        Map<String, Object> userData = pendingSnapshot.getData();
+        userData.put("approved", true);
+
+        // 🔑 Assign unique ID
+        String userId = UUID.randomUUID().toString();
+        userData.put("id", userId);
+
+        // ✅ Move to users collection
+        db.collection("users").document(email).set(userData);
+        db.collection("pending-users").document(email).delete();
+
+        logger.info("User approved: {} with ID: {}", email, userId);
+    }
+
+    public void rejectUser(String email) {
+        Firestore db = FirestoreClient.getFirestore();
+        db.collection("pending-users").document(email).delete();
     }
 
 }

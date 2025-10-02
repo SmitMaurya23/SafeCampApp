@@ -1,8 +1,10 @@
 package com.example.firebase.controller;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,6 +39,18 @@ public class FirebaseController {
     public ResponseEntity<Map<String, Object>> getUser(@PathVariable String email) {
         Map<String, Object> userData = firebaseService.getUserByEmail(email);
         return ResponseEntity.ok(userData);
+    }
+
+    @PostMapping("/approve/{email}")
+    public ResponseEntity<String> approveUser(@PathVariable String email) throws InterruptedException, ExecutionException {
+        firebaseService.approveUser(email);
+        return ResponseEntity.ok("User approved");
+    }
+
+    @DeleteMapping("/reject/{email}")
+    public ResponseEntity<String> rejectUser(@PathVariable String email) {
+        firebaseService.rejectUser(email);
+        return ResponseEntity.ok("User rejected");
     }
 
 }

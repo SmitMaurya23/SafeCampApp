@@ -3,6 +3,8 @@ package com.example.auth.service.impl;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -25,6 +27,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtUtil jwtUtil;
     private final RestTemplate restTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     @Value("${firebase.gateway.url}")
     private String firebaseGatewayUrl;
@@ -49,7 +52,8 @@ public class AuthServiceImpl implements AuthService {
                 firebaseGatewayUrl + "/login",
                 HttpMethod.POST,
                 new HttpEntity<>(request),
-                new ParameterizedTypeReference<Map<String, Object>>() {});
+                new ParameterizedTypeReference<Map<String, Object>>() {
+                });
 
         Map<String, Object> userData = response.getBody();
 
@@ -64,4 +68,20 @@ public class AuthServiceImpl implements AuthService {
 
         return new AuthResponse(token, role, isApproved);
     }
+
+    @Override
+    public Map<String, Object> validateToken(String token) {
+        logger.info("Validating token...");
+
+        if (!jwtUtil.validateToken(token)) {
+            logger.warn("Token is invalid or expired");
+            throw new RuntimeException("Token is invalid or expired");
+        }
+
+        Map<String, Object> claims = jwtUtil.extractAllClaims(token);
+        logger.info("Token claims extracted: {}", claims);
+
+        return claims;
+    }
+
 }
