@@ -33,4 +33,7 @@ public class User extends BaseEntity {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(nullable=false)
+    private String password;
 }

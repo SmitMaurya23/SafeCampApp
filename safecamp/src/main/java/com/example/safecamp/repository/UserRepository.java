@@ -8,8 +8,11 @@ import org.springframework.stereotype.Repository;
 
 import com.example.safecamp.entity.User;
 
+
 @Repository
 public interface UserRepository extends JpaRepository<User,UUID>{
     boolean existsByEmail(String email);
     Optional<User> findByPhone(String phone);
+
+    Optional<User> findByEmail(String email);
 }
