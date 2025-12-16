@@ -1,15 +1,12 @@
 package com.example.safecamp.entity;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import com.example.safecamp.entity.base.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -34,10 +31,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class GateAssignment extends BaseEntity {
-
-    @Id
-    @GeneratedValue
-    private UUID id;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "guard_id", nullable = false)

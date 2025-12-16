@@ -9,31 +9,55 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@NoArgsConstructor
+@Table(name = "entry_exit_logs")
 @Getter
 @Setter
-@Table(name="entry_exit_logs")
-public class EntryExitLog extends BaseEntity{
-    @ManyToOne(optional=false)
+@NoArgsConstructor
+@AllArgsConstructor
+public class EntryExitLog extends BaseEntity {
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(optional=false)
-    private Gate gate;
+    /* ---------- ENTRY EVENT ---------- */
 
-    @Column(nullable=false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "entry_gate_id", nullable = false)
+    private Gate entryGate;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "entry_guard_id", nullable = false)
+    private User entryGuard;
+
+    @Column(name = "entry_time", nullable = false)
     private LocalDateTime entryTime;
 
-    @Column
+    /* ---------- EXIT EVENT ---------- */
+
+    @ManyToOne
+    @JoinColumn(name = "exit_gate_id")
+    private Gate exitGate;
+
+    @ManyToOne
+    @JoinColumn(name = "exit_guard_id")
+    private User exitGuard;
+
+    @Column(name = "exit_time")
     private LocalDateTime exitTime;
 
+    /* ---------- STATUS ---------- */
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable=false)
+    @Column(nullable = false)
     private MovementStatus status;
 }

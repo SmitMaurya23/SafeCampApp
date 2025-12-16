@@ -1,15 +1,18 @@
 package com.example.safecamp.service.serviceImpl;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.example.safecamp.dto.GuestVisitResponse;
 import com.example.safecamp.entity.EntryExitLog;
+import com.example.safecamp.entity.Gate;
 import com.example.safecamp.entity.GuestVisit;
 import com.example.safecamp.entity.User;
 import com.example.safecamp.enums.GuestVisitStatus;
 import com.example.safecamp.enums.Role;
+import com.example.safecamp.repository.GateAssignmentRepository;
 import com.example.safecamp.repository.GuestVisitRepository;
 import com.example.safecamp.repository.UserRepository;
 import com.example.safecamp.service.GuestVisitApprovalService;
@@ -25,6 +28,7 @@ public class GuestVisitApprovalServiceImpl
 
     private final GuestVisitRepository guestVisitRepository;
     private final UserRepository userRepository;
+    private final GateAssignmentRepository gateAssignmentRepository;
 
     @Override
     public GuestVisitResponse approveVisit(UUID visitId, UUID approverId) {
@@ -39,11 +43,21 @@ public class GuestVisitApprovalServiceImpl
         GuestVisit visit = guestVisitRepository.findById(visitId)
                 .orElseThrow(() -> new IllegalArgumentException("Guest visit not found"));
 
+        Gate gate=visit.getExpectedGate();
+
+        if (!gateAssignmentRepository.isGuardAssignedToGate(
+                approver,
+                gate,
+                LocalDateTime.now())) {
+            throw new IllegalStateException("Guard not assigned to visit gate");
+        }
+
         if (visit.getStatus() != GuestVisitStatus.PENDING) {
             throw new IllegalStateException("Only pending visits can be approved");
         }
 
         visit.setStatus(GuestVisitStatus.APPROVED);
+        visit.setCheckedBy(approver);
 
         GuestVisit saved = guestVisitRepository.save(visit);
 
@@ -84,11 +98,23 @@ public class GuestVisitApprovalServiceImpl
         GuestVisit visit = guestVisitRepository.findById(visitId)
                 .orElseThrow(() -> new IllegalArgumentException("Guest visit not found"));
 
+        Gate gate=visit.getExpectedGate();
+
+
+        if (!gateAssignmentRepository.isGuardAssignedToGate(
+                approver,
+                gate,
+                LocalDateTime.now())) {
+            throw new IllegalStateException("Guard not assigned to visit gate");
+        }
+
+
         if (visit.getStatus() != GuestVisitStatus.PENDING) {
             throw new IllegalStateException("Only pending visits can be rejected");
         }
 
         visit.setStatus(GuestVisitStatus.REJECTED);
+        visit.setCheckedBy(approver);
 
         GuestVisit saved = guestVisitRepository.save(visit);
 

@@ -1,5 +1,6 @@
 package com.example.safecamp.dto;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
@@ -10,9 +11,16 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EntryExitRequest {
+public class AssignGateRequest {
+
     @NotNull
-    private UUID userId;
+    private UUID guardId;
+
     @NotNull
     private UUID gateId;
+
+    @NotNull
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
 }

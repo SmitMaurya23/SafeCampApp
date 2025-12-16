@@ -13,9 +13,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EntryExitResponse {
+
     private UUID userId;
     private String userName;
-    private String gateName;
+
+    private String entryGateName;
+    private LocalDateTime entryTime;
+
+    private String exitGateName;
+    private LocalDateTime exitTime;
+
     private MovementStatus status;
-    private LocalDateTime time;
 }

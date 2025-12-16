@@ -41,5 +41,8 @@ public class GuestVisit extends BaseEntity {
     private GuestVisitStatus status;
 
     @OneToOne
+    private User checkedBy;
+
+    @OneToOne
     private EntryExitLog entryExitLog;
 }

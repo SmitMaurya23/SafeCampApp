@@ -12,15 +12,12 @@ import com.example.safecamp.enums.MovementStatus;
 
 
 @Repository
-public interface EntryExitLogRepository extends JpaRepository<EntryExitLog, UUID> {
+public interface EntryExitLogRepository
+        extends JpaRepository<EntryExitLog, UUID> {
 
-    Optional<EntryExitLog> findTopByUserAndStatusOrderByEntryTimeDesc(
-        User user,
-        MovementStatus status
-    );
-
-    Optional<EntryExitLog> findFirstByUserAndStatusOrderByEntryTimeDesc(
-        User guest,
-        MovementStatus status
+    Optional<EntryExitLog> findByUserAndStatus(
+            User user,
+            MovementStatus status
     );
 }
+
