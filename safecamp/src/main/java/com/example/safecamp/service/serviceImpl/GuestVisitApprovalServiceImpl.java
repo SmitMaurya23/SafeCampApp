@@ -11,7 +11,6 @@ import com.example.safecamp.entity.Gate;
 import com.example.safecamp.entity.GuestVisit;
 import com.example.safecamp.entity.User;
 import com.example.safecamp.enums.GuestVisitStatus;
-import com.example.safecamp.enums.Role;
 import com.example.safecamp.repository.GateAssignmentRepository;
 import com.example.safecamp.repository.GuestVisitRepository;
 import com.example.safecamp.repository.UserRepository;
@@ -36,9 +35,6 @@ public class GuestVisitApprovalServiceImpl
         User approver = userRepository.findById(approverId)
                 .orElseThrow(() -> new IllegalArgumentException("Approver not found"));
 
-        if (approver.getRole() != Role.SECURITY) {
-            throw new IllegalStateException("Only security can approve guest visits");
-        }
 
         GuestVisit visit = guestVisitRepository.findById(visitId)
                 .orElseThrow(() -> new IllegalArgumentException("Guest visit not found"));
@@ -90,10 +86,6 @@ public class GuestVisitApprovalServiceImpl
 
         User approver = userRepository.findById(approverId)
                 .orElseThrow(() -> new IllegalArgumentException("Approver not found"));
-
-        if (approver.getRole() != Role.SECURITY) {
-            throw new IllegalStateException("Only security can reject guest visits");
-        }
 
         GuestVisit visit = guestVisitRepository.findById(visitId)
                 .orElseThrow(() -> new IllegalArgumentException("Guest visit not found"));

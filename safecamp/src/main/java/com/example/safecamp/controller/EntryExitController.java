@@ -1,10 +1,8 @@
 package com.example.safecamp.controller;
-
-import java.util.UUID;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.safecamp.dto.EntryExitResponse;
 import com.example.safecamp.dto.EntryRequest;
 import com.example.safecamp.dto.ExitRequest;
+import com.example.safecamp.security.UserPrincipal;
 import com.example.safecamp.service.EntryExitService;
 
 import jakarta.validation.Valid;
@@ -24,21 +23,23 @@ import lombok.RequiredArgsConstructor;
 public class EntryExitController {
     private final EntryExitService entryExitService;
 
-    @PostMapping("/entry/{guardId}")
+    @PreAuthorize("hasRole('SECURITY')")
+    @PostMapping("/entry")
     public ResponseEntity<EntryExitResponse> markEntry(@Valid @RequestBody EntryRequest request,
-            @PathVariable UUID guardId) {
+           @AuthenticationPrincipal UserPrincipal guard) {
 
-        EntryExitResponse response = entryExitService.markEntry(request, guardId);
+        EntryExitResponse response = entryExitService.markEntry(request, guard.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/exit/{guardId}")
+    @PreAuthorize("hasRole('SECURITY')")
+    @PostMapping("/exit")
     public ResponseEntity<EntryExitResponse> markExit(
-            @Valid @RequestBody ExitRequest request, @PathVariable UUID guardId) {
+            @Valid @RequestBody ExitRequest request, @AuthenticationPrincipal UserPrincipal guard) {
 
-        EntryExitResponse response = entryExitService.markExit(request, guardId);
-        return ResponseEntity.ok(response);
+        EntryExitResponse response = entryExitService.markExit(request, guard.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
 }

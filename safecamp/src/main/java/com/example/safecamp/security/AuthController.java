@@ -1,5 +1,6 @@
 package com.example.safecamp.security;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -9,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.safecamp.service.RegistrationService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -19,9 +22,10 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final RegistrationService registrationService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(
+    public ResponseEntity<LoginResponse> login(
             @RequestBody LoginRequest request) {
 
         Authentication authentication = authenticationManager.authenticate(
@@ -33,6 +37,15 @@ public class AuthController {
 
         String token = jwtService.generateToken(user);
 
-        return ResponseEntity.ok(new AuthResponse(token));
+        return ResponseEntity.ok(new LoginResponse(token));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponse> register(
+            @Valid @RequestBody RegisterRequest request) {
+
+        RegisterResponse response = registrationService.register(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

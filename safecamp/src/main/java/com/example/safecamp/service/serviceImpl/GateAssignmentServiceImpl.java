@@ -34,16 +34,13 @@ public class GateAssignmentServiceImpl implements GateAssignmentService {
                 .orElseThrow(() -> new IllegalArgumentException("Guard not found"));
 
         if (guard.getRole() != Role.SECURITY) {
-            throw new IllegalStateException("User is not a security guard");
+            throw new IllegalStateException("Assigned user is not a security guard");
         }
 
 
-        User admin = userRepository.findById(guardId)
+        User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
 
-        if (admin.getRole() != Role.ADMIN) {
-            throw new IllegalStateException("User is not an Admin");
-        }
 
         Gate gate = gateRepository.findById(gateId)
                 .orElseThrow(() -> new IllegalArgumentException("Gate not found"));
@@ -74,13 +71,6 @@ public class GateAssignmentServiceImpl implements GateAssignmentService {
 
     @Override
     public void endAssignment(UUID assignmentId, UUID adminId) {
-
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
-
-        if (admin.getRole() != Role.ADMIN) {
-            throw new IllegalStateException("Only admin can end assignments");
-        }
 
         GateAssignment assignment = gateAssignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Assignment not found"));

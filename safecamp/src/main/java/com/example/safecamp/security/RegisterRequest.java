@@ -1,9 +1,10 @@
-package com.example.safecamp.dto;
+package com.example.safecamp.security;
 
 import com.example.safecamp.enums.Role;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,21 +12,22 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateUserRequest {
+public class RegisterRequest {
 
-    @NotBlank(message = "Username cannot be blank")
+    @NotBlank
     private String name;
 
     @Email
-    @NotBlank(message = "email cannot be blank")
+    @NotBlank
     private String email;
 
-    @NotBlank(message = "phone cannot be blank")
+    @NotBlank
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    private String password;
+
+    @NotBlank
     private String phone;
 
-    @NotNull
+    @NotBlank
     private Role role;
-
-    @NotNull
-    private String password;
 }

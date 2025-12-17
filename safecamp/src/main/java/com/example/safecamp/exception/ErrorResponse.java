@@ -1,4 +1,4 @@
-package com.example.safecamp.dto;
+package com.example.safecamp.exception;
 
 import java.time.LocalDateTime;
 

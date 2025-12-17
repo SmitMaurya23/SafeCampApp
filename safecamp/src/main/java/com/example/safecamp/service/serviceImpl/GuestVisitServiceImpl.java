@@ -34,9 +34,6 @@ public class GuestVisitServiceImpl implements GuestVisitService {
                 User host = userRepository.findById(hostResidentId)
                                 .orElseThrow(() -> new IllegalArgumentException("Host resident not found"));
 
-                if (host.getRole() != Role.RESIDENT) {
-                        throw new IllegalStateException("Only residents can create guest visits");
-                }
 
                 User guest = userRepository.findById(request.getGuestId())
                                 .orElseThrow(() -> new IllegalArgumentException("Guest not found"));
