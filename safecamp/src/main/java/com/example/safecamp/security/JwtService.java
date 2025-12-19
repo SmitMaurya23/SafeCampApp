@@ -15,7 +15,7 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtService {
-    private static final String SECRET_KEY = "";
+    private static final String SECRET_KEY = "f573604c2cda324b03556219a18ba995b65687202a7d453158e13f3c67db0146";
     private static final long EXPIRATION = 1000 * 60 * 60 * 24;// 24 hours
 
     public String generateToken(UserPrincipal user) {

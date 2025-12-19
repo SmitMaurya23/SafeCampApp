@@ -2,6 +2,7 @@ package com.example.safecamp.service.serviceImpl;
 
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.safecamp.dto.CreateUserRequest;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -30,6 +32,7 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setRole(request.getRole());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         User savedUser = userRepository.save(user);
 
@@ -47,15 +50,16 @@ public class UserServiceImpl implements UserService {
         if (id == null || !userRepository.existsById(id)) {
             throw new IllegalArgumentException("No such user exist!!");
         }
-        User fetchedUser = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("No such user exist!!"));
-        
+        User fetchedUser = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No such user exist!!"));
+
         UserResponse response = new UserResponse();
         response.setId(fetchedUser.getId());
         response.setName(fetchedUser.getName());
         response.setEmail(fetchedUser.getEmail());
         response.setPhone(fetchedUser.getPhone());
         response.setRole(fetchedUser.getRole());
-        
+
         return response;
     }
 

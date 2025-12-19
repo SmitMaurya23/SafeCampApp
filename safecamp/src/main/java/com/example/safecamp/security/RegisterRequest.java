@@ -4,7 +4,7 @@ import com.example.safecamp.enums.Role;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,12 +22,11 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank
-    @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
     @NotBlank
     private String phone;
 
-    @NotBlank
+    @NotNull
     private Role role;
 }

@@ -38,6 +38,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
+        user.setRole(request.getRole());
 
         // 3️⃣ Encode password
         user.setPassword(passwordEncoder.encode(request.getPassword()));
