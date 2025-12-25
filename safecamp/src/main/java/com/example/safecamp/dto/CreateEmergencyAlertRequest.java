@@ -1,20 +1,22 @@
 package com.example.safecamp.dto;
 
-import java.util.UUID;
-
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class EntryRequest {
+
+public class CreateEmergencyAlertRequest {
     @NotNull
-    private UUID userId;
+    private Double latitude;
+
     @NotNull
-    private UUID entryGateId;
+    private Double longitude;
+
+    @Size(max=255)
+    private String message;
 }

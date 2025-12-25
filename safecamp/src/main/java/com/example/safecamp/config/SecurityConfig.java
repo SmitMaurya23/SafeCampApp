@@ -12,7 +12,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import com.example.safecamp.exception.SecurityExceptionHandler;
+
+import com.example.safecamp.advice.SecurityExceptionHandler;
 import com.example.safecamp.security.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;

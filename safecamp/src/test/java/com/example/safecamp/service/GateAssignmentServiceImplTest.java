@@ -1,9 +1,8 @@
 package com.example.safecamp.service;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -16,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.safecamp.dto.GateAssignmentResponse;
 import com.example.safecamp.entity.Gate;
 import com.example.safecamp.entity.GateAssignment;
 import com.example.safecamp.entity.User;
@@ -23,13 +23,10 @@ import com.example.safecamp.enums.Role;
 import com.example.safecamp.repository.GateAssignmentRepository;
 import com.example.safecamp.repository.GateRepository;
 import com.example.safecamp.repository.UserRepository;
-import com.example.safecamp.service.serviceImpl.GateAssignmentServiceImpl;
+import com.example.safecamp.serviceImpl.GateAssignmentServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class GateAssignmentServiceImplTest {
-
-    @Mock
-    private GateAssignmentRepository gateAssignmentRepository;
+class GateAssignmentServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
@@ -37,119 +34,179 @@ public class GateAssignmentServiceImplTest {
     @Mock
     private GateRepository gateRepository;
 
+    @Mock
+    private GateAssignmentRepository gateAssignmentRepository;
+
     @InjectMocks
     private GateAssignmentServiceImpl gateAssignmentService;
 
-    private User admin;
+    private UUID guardId;
+    private UUID adminId;
+    private UUID gateId;
+    private UUID assignmentId;
+
     private User guard;
+    private User admin;
     private Gate gate;
+    private GateAssignment assignment;
+
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
     @BeforeEach
-    void setup() {
-        admin = new User();
-        admin.setId(UUID.randomUUID());
-        admin.setRole(Role.ADMIN);
-        admin.setName("Admin");
+    void setUp() {
+        guardId = UUID.randomUUID();
+        adminId = UUID.randomUUID();
+        gateId = UUID.randomUUID();
+        assignmentId = UUID.randomUUID();
+
+        startTime = LocalDateTime.now().minusHours(1);
+        endTime = LocalDateTime.now().plusHours(4);
 
         guard = new User();
-        guard.setId(UUID.randomUUID());
+        guard.setId(guardId);
+        guard.setName("Security Guard");
         guard.setRole(Role.SECURITY);
-        guard.setName("Guard A");
+
+        admin = new User();
+        admin.setId(adminId);
+        admin.setName("Admin User");
+        admin.setRole(Role.ADMIN);
 
         gate = new Gate();
-        gate.setId(UUID.randomUUID());
+        gate.setId(gateId);
         gate.setName("Main Gate");
+
+        assignment = GateAssignment.builder()
+                .id(assignmentId)
+                .guard(guard)
+                .gate(gate)
+                .assignedBy(admin)
+                .startTime(startTime)
+                .endTime(endTime)
+                .build();
+    }
+
+    // ---------- assignGuardToGate ----------
+
+    @Test
+    void assignGuardToGate_success() {
+        when(userRepository.findById(guardId)).thenReturn(Optional.of(guard));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(gateRepository.findById(gateId)).thenReturn(Optional.of(gate));
+        when(gateAssignmentRepository.save(any(GateAssignment.class))).thenReturn(assignment);
+
+        GateAssignmentResponse response = gateAssignmentService.assignGuardToGate(
+                guardId, gateId, startTime, endTime, adminId);
+
+        assertNotNull(response);
+        assertEquals(guardId, response.getGuardId());
+        assertEquals(guard.getName(), response.getGuardName());
+        assertEquals(gateId, response.getGateId());
+        assertEquals(gate.getName(), response.getGateName());
+        assertEquals(startTime, response.getStartTime());
+        assertEquals(endTime, response.getEndTime());
+
+        verify(gateAssignmentRepository).save(any(GateAssignment.class));
     }
 
     @Test
-    void shouldRejectAssignment_whenUserIsNotAdmin() {
+    void assignGuardToGate_guardNotFound() {
+        when(userRepository.findById(guardId)).thenReturn(Optional.empty());
 
-        User resident = new User();
-        resident.setId(UUID.randomUUID());
-        resident.setRole(Role.RESIDENT);
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> gateAssignmentService.assignGuardToGate(
+                        guardId, gateId, startTime, endTime, adminId)
+        );
 
-        when(userRepository.findById(resident.getId()))
-                .thenReturn(Optional.of(resident));
-
-        assertThatThrownBy(() -> gateAssignmentService.assignGuardToGate(
-                guard.getId(),
-                gate.getId(),
-                LocalDateTime.now(),
-                null,
-                resident.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Only admin can assign guards to gates");
+        assertEquals("Guard not found", ex.getMessage());
     }
 
     @Test
-    void shouldRejectAssignment_whenUserIsNotSecurity() {
+    void assignGuardToGate_userNotSecurity() {
+        guard.setRole(Role.RESIDENT);
 
-        User staff = new User();
-        staff.setId(UUID.randomUUID());
-        staff.setRole(Role.STAFF);
+        when(userRepository.findById(guardId)).thenReturn(Optional.of(guard));
 
-        when(userRepository.findById(admin.getId()))
-                .thenReturn(Optional.of(admin));
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> gateAssignmentService.assignGuardToGate(
+                        guardId, gateId, startTime, endTime, adminId)
+        );
 
-        when(userRepository.findById(staff.getId()))
-                .thenReturn(Optional.of(staff));
-
-        assertThatThrownBy(() -> gateAssignmentService.assignGuardToGate(
-                staff.getId(),
-                gate.getId(),
-                LocalDateTime.now(),
-                null,
-                admin.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("User is not a security guard");
+        assertEquals("Assigned user is not a security guard", ex.getMessage());
     }
 
     @Test
-    void shouldRejectAssignment_whenEndTimeBeforeStartTime() {
+    void assignGuardToGate_adminNotFound() {
+        when(userRepository.findById(guardId)).thenReturn(Optional.of(guard));
+        when(userRepository.findById(adminId)).thenReturn(Optional.empty());
 
-        when(userRepository.findById(admin.getId()))
-                .thenReturn(Optional.of(admin));
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> gateAssignmentService.assignGuardToGate(
+                        guardId, gateId, startTime, endTime, adminId)
+        );
 
-        when(userRepository.findById(guard.getId()))
-                .thenReturn(Optional.of(guard));
-
-        when(gateRepository.findById(gate.getId()))
-                .thenReturn(Optional.of(gate));
-
-        LocalDateTime start = LocalDateTime.now();
-        LocalDateTime end = start.minusHours(1);
-
-        assertThatThrownBy(() -> gateAssignmentService.assignGuardToGate(
-                guard.getId(),
-                gate.getId(),
-                start,
-                end,
-                admin.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("End time cannot be before start time");
+        assertEquals("Admin not found", ex.getMessage());
     }
 
     @Test
-    void shouldEndAssignment_whenAdminRequests() {
+    void assignGuardToGate_gateNotFound() {
+        when(userRepository.findById(guardId)).thenReturn(Optional.of(guard));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(gateRepository.findById(gateId)).thenReturn(Optional.empty());
 
-        GateAssignment assignment = new GateAssignment();
-        assignment.setId(UUID.randomUUID());
-        assignment.setGuard(guard);
-        assignment.setGate(gate);
-        assignment.setStartTime(LocalDateTime.now().minusHours(2));
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> gateAssignmentService.assignGuardToGate(
+                        guardId, gateId, startTime, endTime, adminId)
+        );
 
-        when(userRepository.findById(admin.getId()))
-                .thenReturn(Optional.of(admin));
+        assertEquals("Gate not found", ex.getMessage());
+    }
 
-        when(gateAssignmentRepository.findById(assignment.getId()))
+    @Test
+    void assignGuardToGate_endTimeBeforeStartTime() {
+        LocalDateTime invalidEndTime = startTime.minusHours(2);
+
+        when(userRepository.findById(guardId)).thenReturn(Optional.of(guard));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(gateRepository.findById(gateId)).thenReturn(Optional.of(gate));
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> gateAssignmentService.assignGuardToGate(
+                        guardId, gateId, startTime, invalidEndTime, adminId)
+        );
+
+        assertEquals("End time cannot be before start time", ex.getMessage());
+    }
+
+    // ---------- endAssignment ----------
+
+    @Test
+    void endAssignment_success() {
+        when(gateAssignmentRepository.findById(assignmentId))
                 .thenReturn(Optional.of(assignment));
 
-        gateAssignmentService.endAssignment(
-                assignment.getId(),
-                admin.getId());
+        gateAssignmentService.endAssignment(assignmentId, adminId);
 
-        assertThat(assignment.getEndTime()).isNotNull();
+        assertNotNull(assignment.getEndTime());
         verify(gateAssignmentRepository).save(assignment);
     }
 
+    @Test
+    void endAssignment_assignmentNotFound() {
+        when(gateAssignmentRepository.findById(assignmentId))
+                .thenReturn(Optional.empty());
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> gateAssignmentService.endAssignment(assignmentId, adminId)
+        );
+
+        assertEquals("Assignment not found", ex.getMessage());
+    }
 }

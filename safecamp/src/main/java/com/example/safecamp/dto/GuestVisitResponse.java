@@ -5,12 +5,14 @@ import java.util.UUID;
 import com.example.safecamp.enums.GuestVisitStatus;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class GuestVisitResponse {
 
     private UUID visitId;

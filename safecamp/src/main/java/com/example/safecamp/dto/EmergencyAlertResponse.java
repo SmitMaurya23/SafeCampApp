@@ -3,7 +3,7 @@ package com.example.safecamp.dto;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.example.safecamp.enums.MovementStatus;
+import com.example.safecamp.enums.EmergencyStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,19 +11,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class EntryExitResponse {
+public class EmergencyAlertResponse {
+    private UUID alertId;
 
     private UUID userId;
     private String userName;
+    private String userPhone;
 
-    private String entryGateName;
-    private LocalDateTime entryTime;
+    private Double latitude;
+    private Double longitude;
 
-    private String exitGateName;
-    private LocalDateTime exitTime;
+    private EmergencyStatus status;
 
-    private MovementStatus status;
+    private LocalDateTime createdAt;
+
 }

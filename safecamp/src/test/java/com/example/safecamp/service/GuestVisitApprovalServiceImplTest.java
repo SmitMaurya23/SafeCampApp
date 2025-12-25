@@ -1,13 +1,15 @@
 package com.example.safecamp.service;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,101 +22,175 @@ import com.example.safecamp.entity.GuestVisit;
 import com.example.safecamp.entity.User;
 import com.example.safecamp.enums.GuestVisitStatus;
 import com.example.safecamp.enums.Role;
+import com.example.safecamp.repository.GateAssignmentRepository;
 import com.example.safecamp.repository.GuestVisitRepository;
 import com.example.safecamp.repository.UserRepository;
-import com.example.safecamp.service.serviceImpl.GuestVisitApprovalServiceImpl;
+import com.example.safecamp.serviceImpl.GuestVisitApprovalServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class GuestVisitApprovalServiceImplTest {
+class GuestVisitApprovalServiceImplTest {
+
     @Mock
     private GuestVisitRepository guestVisitRepository;
 
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private GateAssignmentRepository gateAssignmentRepository;
+
     @InjectMocks
     private GuestVisitApprovalServiceImpl approvalService;
 
-    @Test
-    void shouldApproveVisit_whenUserIsSecurity() {
+    private UUID visitId;
+    private UUID approverId;
 
-        User security = new User();
-        security.setId(UUID.randomUUID());
-        security.setRole(Role.SECURITY);
+    private User approver;
+    private User guest;
+    private User host;
+    private Gate gate;
+    private GuestVisit visit;
 
-        User guest = new User();
+    @BeforeEach
+    void setUp() {
+        visitId = UUID.randomUUID();
+        approverId = UUID.randomUUID();
+
+        approver = new User();
+        approver.setId(approverId);
+        approver.setName("Security Guard");
+        approver.setRole(Role.SECURITY);
+
+        guest = new User();
         guest.setId(UUID.randomUUID());
-        guest.setName("Rahul");
-        guest.setPhone("9876543210");
+        guest.setName("Guest");
+        guest.setPhone("9999999999");
         guest.setRole(Role.GUEST);
 
-        User host = new User();
+        host = new User();
         host.setId(UUID.randomUUID());
-        host.setName("Amit");
+        host.setName("Resident");
         host.setRole(Role.RESIDENT);
 
-        Gate gate = new Gate();
+        gate = new Gate();
         gate.setId(UUID.randomUUID());
         gate.setName("Main Gate");
 
-        GuestVisit visit = new GuestVisit();
-        visit.setId(UUID.randomUUID());
+        visit = new GuestVisit();
+        visit.setId(visitId);
         visit.setGuest(guest);
         visit.setHostResident(host);
         visit.setExpectedGate(gate);
-        visit.setExpectedEntryTime(LocalDateTime.now());
+        visit.setExpectedEntryTime(LocalDateTime.now().plusHours(1));
         visit.setStatus(GuestVisitStatus.PENDING);
+    }
 
-        when(userRepository.findById(security.getId()))
-                .thenReturn(Optional.of(security));
+    // ================= APPROVE =================
 
-        when(guestVisitRepository.findById(visit.getId()))
-                .thenReturn(Optional.of(visit));
+    @Test
+    void approveVisit_success() {
+        when(userRepository.findById(approverId)).thenReturn(Optional.of(approver));
+        when(guestVisitRepository.findById(visitId)).thenReturn(Optional.of(visit));
+        when(gateAssignmentRepository.isGuardAssignedToGate(
+                eq(approver), eq(gate), any(LocalDateTime.class)))
+                .thenReturn(true);
+        when(guestVisitRepository.save(any(GuestVisit.class))).thenReturn(visit);
 
-        when(guestVisitRepository.save(any()))
-                .thenAnswer(inv -> inv.getArgument(0));
+        GuestVisitResponse response = approvalService.approveVisit(visitId, approverId);
 
-        GuestVisitResponse response = approvalService.approveVisit(visit.getId(), security.getId());
+        assertNotNull(response);
+        assertEquals(GuestVisitStatus.APPROVED, response.getStatus());
+        assertEquals(visitId, response.getVisitId());
+        assertEquals(guest.getId(), response.getGuestId());
+        assertEquals(host.getId(), response.getHostResidentId());
 
-        assertThat(response.getStatus())
-                .isEqualTo(GuestVisitStatus.APPROVED);
+        verify(guestVisitRepository).save(visit);
     }
 
     @Test
-    void shouldRejectApproval_whenUserIsNotSecurity() {
+    void approveVisit_approverNotFound() {
+        when(userRepository.findById(approverId)).thenReturn(Optional.empty());
 
-        User resident = new User();
-        resident.setId(UUID.randomUUID());
-        resident.setRole(Role.RESIDENT);
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> approvalService.approveVisit(visitId, approverId));
 
-        when(userRepository.findById(resident.getId()))
-                .thenReturn(Optional.of(resident));
-
-        assertThatThrownBy(() -> approvalService.approveVisit(UUID.randomUUID(), resident.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Only security can approve guest visits");
+        assertEquals("Approver not found", ex.getMessage());
     }
 
     @Test
-    void shouldRejectApproval_whenVisitNotPending() {
+    void approveVisit_visitNotFound() {
+        when(userRepository.findById(approverId)).thenReturn(Optional.of(approver));
+        when(guestVisitRepository.findById(visitId)).thenReturn(Optional.empty());
 
-        User security = new User();
-        security.setId(UUID.randomUUID());
-        security.setRole(Role.SECURITY);
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> approvalService.approveVisit(visitId, approverId));
 
-        GuestVisit visit = new GuestVisit();
-        visit.setId(UUID.randomUUID());
+        assertEquals("Guest visit not found", ex.getMessage());
+    }
+
+    @Test
+    void approveVisit_guardNotAssigned() {
+        when(userRepository.findById(approverId)).thenReturn(Optional.of(approver));
+        when(guestVisitRepository.findById(visitId)).thenReturn(Optional.of(visit));
+        when(gateAssignmentRepository.isGuardAssignedToGate(any(), any(), any()))
+                .thenReturn(false);
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> approvalService.approveVisit(visitId, approverId));
+
+        assertEquals("Guard not assigned to visit gate", ex.getMessage());
+    }
+
+    @Test
+    void approveVisit_notPending() {
         visit.setStatus(GuestVisitStatus.APPROVED);
 
-        when(userRepository.findById(security.getId()))
-                .thenReturn(Optional.of(security));
+        when(userRepository.findById(approverId)).thenReturn(Optional.of(approver));
+        when(guestVisitRepository.findById(visitId)).thenReturn(Optional.of(visit));
+        when(gateAssignmentRepository.isGuardAssignedToGate(any(), any(), any()))
+                .thenReturn(true);
 
-        when(guestVisitRepository.findById(visit.getId()))
-                .thenReturn(Optional.of(visit));
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> approvalService.approveVisit(visitId, approverId));
 
-        assertThatThrownBy(() -> approvalService.approveVisit(visit.getId(), security.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Only pending visits can be approved");
+        assertEquals("Only pending visits can be approved", ex.getMessage());
     }
 
+    // ================= REJECT =================
+
+    @Test
+    void rejectVisit_success() {
+        when(userRepository.findById(approverId)).thenReturn(Optional.of(approver));
+        when(guestVisitRepository.findById(visitId)).thenReturn(Optional.of(visit));
+        when(gateAssignmentRepository.isGuardAssignedToGate(any(), any(), any()))
+                .thenReturn(true);
+        when(guestVisitRepository.save(any(GuestVisit.class))).thenReturn(visit);
+
+        GuestVisitResponse response = approvalService.rejectVisit(visitId, approverId);
+
+        assertNotNull(response);
+        assertEquals(GuestVisitStatus.REJECTED, response.getStatus());
+
+        verify(guestVisitRepository).save(visit);
+    }
+
+    @Test
+    void rejectVisit_notPending() {
+        visit.setStatus(GuestVisitStatus.APPROVED);
+
+        when(userRepository.findById(approverId)).thenReturn(Optional.of(approver));
+        when(guestVisitRepository.findById(visitId)).thenReturn(Optional.of(visit));
+        when(gateAssignmentRepository.isGuardAssignedToGate(any(), any(), any()))
+                .thenReturn(true);
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> approvalService.rejectVisit(visitId, approverId));
+
+        assertEquals("Only pending visits can be rejected", ex.getMessage());
+    }
 }

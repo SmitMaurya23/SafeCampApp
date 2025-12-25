@@ -1,4 +1,4 @@
-package com.example.safecamp.exception;
+package com.example.safecamp.advice;
 
 import java.time.LocalDateTime;
 

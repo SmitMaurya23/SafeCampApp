@@ -1,8 +1,9 @@
-package com.example.safecamp.service.serviceImpl;
+package com.example.safecamp.serviceImpl;
 
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.safecamp.dto.CreateGateRequest;
 import com.example.safecamp.dto.GateResponse;
@@ -10,7 +11,6 @@ import com.example.safecamp.entity.Gate;
 import com.example.safecamp.repository.GateRepository;
 import com.example.safecamp.service.GateService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -25,28 +25,28 @@ public class GateServiceImpl implements GateService {
         if (gateRepository.existsByName(request.getName()) || gateRepository.existsByLocation(request.getLocation())) {
             throw new IllegalArgumentException("Gate already exists!!!");
         }
-        Gate gate = new Gate();
-        gate.setName(request.getName());
-        gate.setLocation(request.getLocation());
+        Gate gate = Gate.builder()
+                        .name(request.getName())
+                        .location(request.getLocation())
+                        .build();
 
         Gate savedGate = gateRepository.save(gate);
 
-        GateResponse gateResponse = new GateResponse();
-        gateResponse.setId(savedGate.getId());
-        gateResponse.setName(savedGate.getName());
-        gateResponse.setLocation(savedGate.getLocation());
-
-        return gateResponse;
+        return GateResponse.builder()
+                            .id(savedGate.getId())
+                            .name(savedGate.getName())
+                            .location(savedGate.getLocation())
+                            .build();
     }
 
     @Override
     public GateResponse getGateById(UUID id) {
         Gate gate=gateRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Gate does not exists!!!"));
-        GateResponse gateResponse = new GateResponse();
-        gateResponse.setId(gate.getId());
-        gateResponse.setName(gate.getName());
-        gateResponse.setLocation(gate.getLocation());
 
-        return gateResponse;
+        return GateResponse.builder()
+                            .id(gate.getId())
+                            .name(gate.getName())
+                            .location(gate.getLocation())
+                            .build();
     }
 }

@@ -1,9 +1,10 @@
-package com.example.safecamp.service.serviceImpl;
+package com.example.safecamp.serviceImpl;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.safecamp.dto.GateAssignmentResponse;
 import com.example.safecamp.entity.Gate;
@@ -15,7 +16,6 @@ import com.example.safecamp.repository.GateRepository;
 import com.example.safecamp.repository.UserRepository;
 import com.example.safecamp.service.GateAssignmentService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -59,14 +59,15 @@ public class GateAssignmentServiceImpl implements GateAssignmentService {
 
         GateAssignment saved = gateAssignmentRepository.save(assignment);
 
-        return new GateAssignmentResponse(
-                saved.getId(),
-                guard.getId(),
-                guard.getName(),
-                gate.getId(),
-                gate.getName(),
-                saved.getStartTime(),
-                saved.getEndTime());
+        return GateAssignmentResponse.builder()
+                                        .assignmentId(saved.getId())
+                                        .endTime(saved.getEndTime())
+                                        .gateId(gate.getId())
+                                        .gateName(gate.getName())
+                                        .guardId(guard.getId())
+                                        .guardName(guard.getName())
+                                        .startTime(saved.getStartTime())
+                                        .build();
     }
 
     @Override

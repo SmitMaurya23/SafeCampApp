@@ -1,7 +1,8 @@
-package com.example.safecamp.service.serviceImpl;
+package com.example.safecamp.serviceImpl;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.safecamp.entity.User;
 import com.example.safecamp.enums.Role;
@@ -10,7 +11,6 @@ import com.example.safecamp.security.RegisterRequest;
 import com.example.safecamp.security.RegisterResponse;
 import com.example.safecamp.service.RegistrationService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,21 +34,20 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         // 2️⃣ Create User entity
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPhone(request.getPhone());
-        user.setRole(request.getRole());
-
-        // 3️⃣ Encode password
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        User user = User.builder()
+                .email(request.getEmail())
+                .name(request.getName())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .role(request.getRole())
+                .build();
 
         User savedUser = userRepository.save(user);
 
-        return new RegisterResponse(
-                savedUser.getId(),
-                "Registration successful",
-                savedUser.getRole()
-        );
+        return RegisterResponse.builder()
+                .userId(savedUser.getId())
+                .role(savedUser.getRole())
+                .message("Registration successful")
+                .build();
     }
 }

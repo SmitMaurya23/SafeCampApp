@@ -1,9 +1,10 @@
-package com.example.safecamp.service.serviceImpl;
+package com.example.safecamp.serviceImpl;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.safecamp.dto.EntryExitResponse;
 import com.example.safecamp.dto.EntryRequest;
@@ -22,7 +23,6 @@ import com.example.safecamp.repository.GuestVisitRepository;
 import com.example.safecamp.repository.UserRepository;
 import com.example.safecamp.service.EntryExitService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -57,12 +57,13 @@ public class EntryExitServiceImpl implements EntryExitService {
             throw new IllegalStateException("User is already inside campus");
         }
 
-        EntryExitLog log = new EntryExitLog();
-        log.setUser(user);
-        log.setEntryGate(entryGate);
-        log.setEntryGuard(guard);
-        log.setEntryTime(LocalDateTime.now());
-        log.setStatus(MovementStatus.IN);
+        EntryExitLog log = EntryExitLog.builder()
+                                        .user(user)
+                                        .entryGate(entryGate)
+                                        .entryGuard(guard)
+                                        .entryTime(LocalDateTime.now())
+                                        .status(MovementStatus.IN)
+                                        .build();
 
         entryExitLogRepository.save(log);
 
@@ -76,15 +77,15 @@ public class EntryExitServiceImpl implements EntryExitService {
             guestVisitRepository.save(visit);
         }
 
-        return new EntryExitResponse(
-                user.getId(),
-                user.getName(),
-                entryGate.getName(),
-                log.getEntryTime(),
-                null,
-                null,
-                MovementStatus.IN
-        );
+        return EntryExitResponse.builder()
+                                .userId(user.getId())
+                                .userName(user.getName())
+                                .entryGateName(entryGate.getName())
+                                .entryTime(log.getEntryTime())
+                                .exitGateName(null)
+                                .exitTime(null)
+                                .status(MovementStatus.IN)
+                                .build();
     }
 
     @Override
@@ -124,14 +125,14 @@ public class EntryExitServiceImpl implements EntryExitService {
             guestVisitRepository.save(visit);
         }
 
-        return new EntryExitResponse(
-                user.getId(),
-                user.getName(),
-                log.getEntryGate().getName(),
-                log.getEntryTime(),
-                exitGate.getName(),
-                log.getExitTime(),
-                MovementStatus.OUT
-        );
+        return EntryExitResponse.builder()
+                                .userId(user.getId())
+                                .userName(user.getName())
+                                .entryGateName(log.getEntryGate().getName())
+                                .entryTime(log.getEntryTime())
+                                .exitGateName(exitGate.getName())
+                                .exitTime( log.getExitTime())
+                                .status(MovementStatus.OUT)
+                                .build();
     }
 }

@@ -5,10 +5,12 @@ import java.util.UUID;
 import com.example.safecamp.enums.Role;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
+@Builder
 public class RegisterResponse {
     private UUID userId;
     private String message;

@@ -1,9 +1,10 @@
-package com.example.safecamp.service.serviceImpl;
+package com.example.safecamp.serviceImpl;
 
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.safecamp.dto.CreateGuestVisitRequest;
 import com.example.safecamp.dto.GuestVisitResponse;
@@ -17,7 +18,6 @@ import com.example.safecamp.repository.GuestVisitRepository;
 import com.example.safecamp.repository.UserRepository;
 import com.example.safecamp.service.GuestVisitService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -33,7 +33,6 @@ public class GuestVisitServiceImpl implements GuestVisitService {
         public GuestVisitResponse createGuestVisit(CreateGuestVisitRequest request, UUID hostResidentId) {
                 User host = userRepository.findById(hostResidentId)
                                 .orElseThrow(() -> new IllegalArgumentException("Host resident not found"));
-
 
                 User guest = userRepository.findById(request.getGuestId())
                                 .orElseThrow(() -> new IllegalArgumentException("Guest not found"));
@@ -54,34 +53,33 @@ public class GuestVisitServiceImpl implements GuestVisitService {
                 Gate gate = gateRepository.findById(request.getExpectedGateId())
                                 .orElseThrow(() -> new IllegalArgumentException("Gate not found"));
 
-                GuestVisit visit = new GuestVisit();
-                visit.setGuest(guest);
-                visit.setHostResident(host);
-                visit.setExpectedGate(gate);
-                visit.setExpectedEntryTime(request.getExpectedEntryTime());
-                visit.setStatus(GuestVisitStatus.PENDING);
+                GuestVisit visit = GuestVisit.builder()
+                                .checkedBy(guest)
+                                .entryExitLog(null)
+                                .expectedEntryTime(request.getExpectedEntryTime())
+                                .expectedGate(gate)
+                                .guest(null)
+                                .hostResident(host)
+                                .status(GuestVisitStatus.PENDING)
+                                .build();
 
                 GuestVisit saved = guestVisitRepository.save(visit);
 
-                return new GuestVisitResponse(
-                                saved.getId(),
-
-                                guest.getId(),
-                                guest.getName(),
-                                guest.getPhone(),
-
-                                host.getId(),
-                                host.getName(),
-
-                                gate.getId(),
-                                gate.getName(),
-                                saved.getExpectedEntryTime(),
-
-                                null, // entryExitLogId
-                                null, // actualEntryTime
-                                null, // actualExitTime
-
-                                saved.getStatus());
+                return GuestVisitResponse.builder()
+                                .actualEntryTime(saved.getExpectedEntryTime())
+                                .actualExitTime(null)
+                                .entryExitLogId(hostResidentId)
+                                .expectedEntryTime(null)
+                                .expectedGateId(gate.getId())
+                                .expectedGateName(gate.getName())
+                                .guestId(guest.getId())
+                                .guestName(guest.getName())
+                                .guestPhone(guest.getPhone())
+                                .hostResidentId(host.getId())
+                                .hostResidentName(host.getName())
+                                .status(saved.getStatus())
+                                .visitId(saved.getId())
+                                .build();
         }
 
 }
