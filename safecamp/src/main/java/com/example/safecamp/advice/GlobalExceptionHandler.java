@@ -13,7 +13,7 @@ import jakarta.persistence.EntityNotFoundException;
 // Invalid input
 // Bad request data
 
-//@RestControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)

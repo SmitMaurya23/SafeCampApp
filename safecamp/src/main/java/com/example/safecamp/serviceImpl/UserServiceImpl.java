@@ -12,6 +12,7 @@ import com.example.safecamp.dto.ChangePasswordRequest;
 import com.example.safecamp.dto.CreateUserRequest;
 import com.example.safecamp.dto.UserResponse;
 import com.example.safecamp.entity.User;
+import com.example.safecamp.enums.Role;
 import com.example.safecamp.repository.UserRepository;
 import com.example.safecamp.service.UserService;
 
@@ -95,6 +96,29 @@ public class UserServiceImpl implements UserService {
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+    }
+
+    @Override
+    public List<UserResponse> getUserByRole(String role) {
+
+        Role validRole;
+        try{
+            validRole=Role.valueOf(role);
+        }catch(IllegalArgumentException e){
+            throw new IllegalArgumentException("Invalid Role !!!");
+        }
+
+        List<User> userList = userRepository.findByRole(validRole)
+                .orElseThrow(() -> new IllegalArgumentException("No such role exist !!!"));
+
+        List<UserResponse> result = new ArrayList<>();
+        for (User user : userList) {
+            result.add(UserResponse.builder().email(user.getEmail()).id(user.getId()).name(user.getName())
+                    .phone(user.getPhone()).role(user.getRole()).build());
+        }
+
+        return result;
 
     }
 

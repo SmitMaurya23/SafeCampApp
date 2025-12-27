@@ -46,7 +46,10 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/auth/**",
-                                "/error")
+                                "/ws/**",//Authentication for Scoket Handashake should happen by SocketSecurity
+                                "/error",
+                                "/api/users/any/**"
+                                )
                         .permitAll()
                         // 🔐 Everything else
                         .anyRequest().authenticated())
